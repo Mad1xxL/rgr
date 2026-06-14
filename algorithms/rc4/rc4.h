@@ -3,4 +3,4 @@
 
 #include "../../include/crypto_api.h"
 
-#endif RC4_H
+#endif
