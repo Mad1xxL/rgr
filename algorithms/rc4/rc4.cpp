@@ -57,7 +57,7 @@ extern "C" const AlgorithmInfo* get_algorithm_info()    {
 }
 
 extern "C" size_t get_output_size(size_t input_size, int operation_type)    {
-    
+    (void)operation_type;
     return input_size;
 }
 
