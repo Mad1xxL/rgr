@@ -12,9 +12,19 @@ namespace {
     constexpr int INVALID_INPUT = -2;
     constexpr int INVALID_OUTPUT = -3;
     
-
+    //Перемешивание массива state(внутреннего состояния RC4) используя ключ
     void ksa(const uint8_t* key, size_t key_size, std::vector<uint8_t>& state)  {
+        state.resize(256);
 
+        for (size_t i = 0 ; i < 256 ; ++i)  {
+            state[i] = static_cast<uint8_t>(i);
+        }
+
+        size_t j = 0;
+        for (size_t i = 0 ; i < 256 ; ++i)  {
+            j = (j + state[i] + key[i % key_size]) % 256;
+            std::swap(state[i], state[j]);
+        }
     }
 
     void rc4_process(ConstBuffer key, ConstBuffer input, MutBuffer* output) {
