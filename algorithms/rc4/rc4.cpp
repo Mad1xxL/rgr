@@ -1,26 +1,75 @@
 #include "rc4.h"
 
+#include <vector> 
+#include <cstdint>
+#include <algorithm>
+
+namespace {
+    constexpr size_t RC4_KEY_SIZE = 16;
+
+    constexpr int SUCCSESS = 0;
+    constexpr int INVALID_KEY = -1;
+    constexpr int INVALID_INPUT = -2;
+    constexpr int INVALID_OUTPUT = -3;
+    
+
+    void ksa(const uint8_t* key, size_t key_size, std::vector<uint8_t>& state)  {
+
+    }
+
+    void rc4_process(ConstBuffer key, ConstBuffer input, MutBuffer* output) {
+
+    }
+}
+
 static const AlgorithmInfo info = {
     "RC4",
-    16
+    RC4_KEY_SIZE
 };
 
-extern "C" const AlgorithmInfo* get_algorithm_info()
-{
+extern "C" const AlgorithmInfo* get_algorithm_info()    {
     return &info;
 }
 
-extern "C" size_t get_output_size(size_t input_size, int operation_type)
-{
+extern "C" size_t get_output_size(size_t input_size, int operation_type)    {
+    (void)operation_type;
     return input_size;
 }
 
-extern "C" int encrypt(ConstBuffer key, ConstBuffer input, MutBuffer* output)
-{
-    return 0;
+extern "C" int encrypt(ConstBuffer key, ConstBuffer input, MutBuffer* output)   {
+    if (key.data == nullptr || key.size != RC4_KEY_SIZE)    {
+        return INVALID_KEY;
+    }
+    if (input.size > 0 && input.data == nullptr)    {
+        return INVALID_INPUT;
+    }
+
+    if (output == nullptr || output -> data == nullptr) {
+        return INVALID_OUTPUT;
+    }
+
+    if (output -> size < input.size)    {
+        return INVALID_OUTPUT;
+    }
+
+    return SUCCSESS;
 }
 
-extern "C" int decrypt(ConstBuffer key, ConstBuffer input, MutBuffer* output)
-{
-    return 0;
+extern "C" int decrypt(ConstBuffer key, ConstBuffer input, MutBuffer* output)   {
+    if (key.data == nullptr || key.size != RC4_KEY_SIZE)    {
+        return INVALID_KEY;
+    }
+    if (input.size > 0 && input.data == nullptr)    {
+        return INVALID_INPUT;
+    }
+
+    if (output == nullptr || output -> data == nullptr) {
+        return INVALID_OUTPUT;
+    }
+
+    if (output -> size < input.size)    {
+        return INVALID_OUTPUT;
+    }
+
+    return SUCCSESS;
 }
