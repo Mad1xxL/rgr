@@ -19,6 +19,28 @@ namespace {
         CHACHA20_KEY_SIZE
     };
     
+
+    uint32_t rotate_left(uint32_t value, int shift) {
+        return (value << shift) | (value >> (32 - shift));
+    }
+
+    void quarter_round(std::vector<uint32_t>& state, size_t a, size_t b, size_t c, size_t d)    {
+        state[a] += state[b];
+        state[d] ^= state[a];
+        state[d] = rotate_left(state[d], 16);
+
+        state[c] += state[d];
+        state[b] ^= state[c];
+        state[b] = rotate_left(state[b], 12);
+
+        state[a] += state[b];
+        state[d] ^= state[a];
+        state[d] = rotate_left(state[d], 8);
+
+        state[c] += state[d];
+        state[b] ^= state[c];
+        state[b] = rotate_left(state[b], 7);
+    }
 }
 
 extern "C" const AlgorithmInfo* get_algorithm_info()    {
