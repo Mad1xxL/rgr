@@ -1,9 +1,13 @@
 #include "chacha20.h"
 
+#include <vector>
 #include <cstdint>
 
 namespace {
-    constexpr size_t CHACHA20_KEY_SIZE = 32;
+    constexpr size_t CHACHA20_SECRET_KEY_SIZE = 32;
+    constexpr size_t CHACHA20_NONCE_SIZE = 12;
+    constexpr size_t CHACHA20_KEY_SIZE = CHACHA20_SECRET_KEY_SIZE + CHACHA20_NONCE_SIZE;
+    constexpr size_t CHACHA20_BLOCK_SIZE = 64;
 
     constexpr int SUCCESS = 0;
     constexpr int INVALID_KEY = -1;
