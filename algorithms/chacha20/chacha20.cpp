@@ -41,6 +41,13 @@ namespace {
         state[b] ^= state[c];
         state[b] = rotate_left(state[b], 7);
     }
+
+    uint32_t load_32(const uint8_t* data)   {
+        return static_cast<uint32_t>(data[0]) |
+                (static_cast<uint32_t>(data[1]) << 8) |
+                (static_cast<uint32_t>(data[2]) << 16) |
+                (static_cast<uint32_t>(data[3]) << 24);
+    }
 }
 
 extern "C" const AlgorithmInfo* get_algorithm_info()    {
