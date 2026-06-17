@@ -70,6 +70,13 @@ namespace {
 
         return state;
     }
+
+    void save_32(uint32_t value, uint8_t* output)   {
+        output[0] = static_cast<uint8_t>(value);
+        output[1] = static_cast<uint8_t>(value >> 8);
+        output[2] = static_cast<uint8_t>(value >> 16);
+        output[3] = static_cast<uint8_t>(value >> 24);
+    }
 }
 
 extern "C" const AlgorithmInfo* get_algorithm_info()    {
