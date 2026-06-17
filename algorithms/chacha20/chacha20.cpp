@@ -48,6 +48,28 @@ namespace {
                 (static_cast<uint32_t>(data[2]) << 16) |
                 (static_cast<uint32_t>(data[3]) << 24);
     }
+
+    std::vector<uint32_t> create_initial_state(const uint8_t* key, const uint8_t* nonce)    {
+        std::vector<uint32_t> state(16);
+
+        // Константы ChaCha20 ("expand 32-byte k")
+        state[0] = 0x61707865;
+        state[1] = 0x3320646e;
+        state[2] = 0x79622d32;
+        state[3] = 0x6b206574;
+
+        for (size_t i = 0 ; i < 8 ; ++i)    {
+            state[4 + i] = load_32(key + i * 4);
+        }
+
+        state[12] = 0;
+
+        state[13] = load_32(nonce);
+        state[14] = load_32(nonce + 4);
+        state[15] = load_32(nonce + 8);
+
+        return state;
+    }
 }
 
 extern "C" const AlgorithmInfo* get_algorithm_info()    {
