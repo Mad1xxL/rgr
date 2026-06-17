@@ -14,10 +14,7 @@ namespace {
     constexpr int INVALID_INPUT = -2;
     constexpr int INVALID_OUTPUT = -3;
 
-    const AlgorithmInfo info = {
-        "ChaCha20",
-        CHACHA20_KEY_SIZE
-    };
+    const AlgorithmInfo info = {"ChaCha20", CHACHA20_KEY_SIZE};
     
 
     uint32_t rotate_left(uint32_t value, int shift) {
@@ -77,6 +74,32 @@ namespace {
         output[2] = static_cast<uint8_t>(value >> 16);
         output[3] = static_cast<uint8_t>(value >> 24);
     }
+
+    void generate_block(std::vector<uint32_t>& state, uint8_t* output)
+{
+    std::vector<uint32_t> working_state = state;
+
+    for (size_t i = 0; i < 10; ++i)
+    {
+        quarter_round(working_state, 0, 4, 8, 12);
+        quarter_round(working_state, 1, 5, 9, 13);
+        quarter_round(working_state, 2, 6, 10, 14);
+        quarter_round(working_state, 3, 7, 11, 15);
+
+        quarter_round(working_state, 0, 5, 10, 15);
+        quarter_round(working_state, 1, 6, 11, 12);
+        quarter_round(working_state, 2, 7, 8, 13);
+        quarter_round(working_state, 3, 4, 9, 14);
+    }
+
+    for (size_t i = 0; i < 16; ++i)
+    {
+        working_state[i] += state[i];
+        save_32(working_state[i], output + i * 4);
+    }
+
+    ++state[12];
+}
 }
 
 extern "C" const AlgorithmInfo* get_algorithm_info()    {
