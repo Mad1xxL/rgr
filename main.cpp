@@ -4,15 +4,15 @@
 void print_help()   {
     std::cout
         << "Cryptum\n"
-        << "Usage:\n"
-        << "  cryptum [options]\n\n"
-        << "Options:\n"
-        << "  --help                Show help message\n"
-        << "  -a <algorithm>        rc4 | chacha20\n"
-        << "  -m <mode>             encrypt | decrypt\n"
-        << "  -k <key_file>         Path to key file\n"
-        << "  -i <input_file>       Path to input file\n"
-        << "  -o <output_file>      Path to output file\n";
+        << "Использование:\n"
+        << "  cryptum [параметры]\n\n"
+        << "Параметры:\n"
+        << "  --help                  Показать справку\n"
+        << "  -a <алгоритм>           rc4 | chacha20\n"
+        << "  -m <режим>              encrypt | decrypt\n"
+        << "  -k <файл ключа>         Путь к файлу ключа\n"
+        << "  -i <входной файл>       Путь к входному файлу\n"
+        << "  -o <выходной файл>      Путь к выходному файлу\n";
 }
 
 int main(int argc, char* argv[])    {
@@ -54,11 +54,31 @@ int main(int argc, char* argv[])    {
         }
     }
 
-    std::cout << "Algorithm: " << algorithm << '\n';
-    std::cout << "Mode: " << mode << '\n';
-    std::cout << "Key file: " << key_file << '\n';
-    std::cout << "Input file: " << input_file << '\n';
-    std::cout << "Output file: " << output_file << '\n';
+    if (algorithm.empty())  {
+        std::cerr << "Ошибка: не указан алгоритм\n";
+        return 1;
+    }
+
+    if (mode.empty())   {
+        std::cerr << "Ошибка: не указан режим работы\n";
+        return 1;
+    }
+
+    if (algorithm != "rc4" && algorithm != "chacha20")  {
+        std::cerr << "Ошибка: алгоритм не поддерживается\n";
+        return 1;
+    }
+
+    if (mode != "encrypt" && mode != "decrypt") {
+        std::cerr << "Ошибка: режим не поддерживается\n";
+        return 1;
+    }
+
+    std::cout << "Алгоритм: " << algorithm << '\n';
+    std::cout << "Режим: " << mode << '\n';
+    std::cout << "Файл ключа: " << key_file << '\n';
+    std::cout << "Входной файл: " << input_file << '\n';
+    std::cout << "Выходной файл: " << output_file << '\n';
 
     return 0;
 }
