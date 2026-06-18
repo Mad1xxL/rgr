@@ -45,6 +45,25 @@ bool write_binary_file(const std::string& path, const std::vector<uint8_t>& data
     return true;
 }
 
+bool read_stdin(std::vector<uint8_t>& data) {
+    char symbol;
+
+    while (std::cin.get(symbol))
+    {
+        data.push_back(static_cast<uint8_t>(symbol));
+    }
+
+    return true;
+}
+
+bool write_stdout(const std::vector<uint8_t>& data) {
+    if (!data.empty())  {
+        std::cout.write(reinterpret_cast<const char*>(data.data()), data.size());
+    }
+
+    return true;
+}
+
 std::vector<uint8_t> generate_key(size_t size)  {
     std::vector<uint8_t> key(size);
     std::random_device random_device;
@@ -174,12 +193,6 @@ int main(int argc, char* argv[])    {
         return 1;
     }
 
-    std::cout << "Алгоритм: " << algorithm << '\n';
-    std::cout << "Режим: " << mode << '\n';
-    std::cout << "Файл ключа: " << key_file << '\n';
-    std::cout << "Входной файл: " << input_file << '\n';
-    std::cout << "Выходной файл: " << output_file << '\n';
-
     std::string library_path;
 
     if (algorithm == "rc4") {
@@ -207,8 +220,6 @@ int main(int argc, char* argv[])    {
         std::cerr << "Ошибка: не удалось загрузить библиотеку\n";
         return 1;
     }
-
-    std::cout << "Библиотека успешно загружена\n";
 
     using GetAlgorithmInfoFunc = const AlgorithmInfo* (*)();
     GetAlgorithmInfoFunc get_algorithm_info = reinterpret_cast<GetAlgorithmInfoFunc>(load_function(library, "get_algorithm_info"));
@@ -248,24 +259,29 @@ int main(int argc, char* argv[])    {
 
     const AlgorithmInfo* info = get_algorithm_info();
 
-    std::cout << "Название алгоритма из библиотеки: " << info->algorithm_name << '\n';
-
-    std::cout << "Размер ключа из библиотеки: " << info->key_size << " байт\n";
-
     if (mode == "generate-key") {
         std::vector<uint8_t> generated_key = generate_key(info->key_size);
 
-        if (!write_binary_file(output_file, generated_key)) {
+        bool key_written = false;
+
+        if (output_file == "-") {
+            key_written = write_stdout(generated_key);
+        }
+        else    {
+            key_written = write_binary_file(output_file, generated_key);
+        }
+
+        if (!key_written)   {
             std::cerr << "Ошибка: не удалось записать файл ключа\n";
             close_library(library);
             return 1;
         }
 
-        std::cout << "Ключ успешно сгенерирован\n";
+    std::cout << "Ключ успешно сгенерирован\n";
 
-        close_library(library);
-        return 0;
-    }
+    close_library(library);
+    return 0;
+}
 
     std::vector<uint8_t> key_data;
     std::vector<uint8_t> input_data;
@@ -276,15 +292,14 @@ int main(int argc, char* argv[])    {
         return 1;
     }
 
-    if (!read_binary_file(input_file, input_data))  {
+    if (input_file == "-")  {
+        read_stdin(input_data);
+    }
+    else if (!read_binary_file(input_file, input_data)) {
         std::cerr << "Ошибка: не удалось открыть входной файл\n";
         close_library(library);
         return 1;
     }
-
-    std::cout << "Размер ключа: " << key_data.size() << " байт\n";
-    std::cout << "Размер входного файла: " << input_data.size() << " байт\n";
-    std::cout << "Функции encrypt и decrypt успешно загружены\n";
 
     int operation_type = 0;
 
@@ -326,7 +341,10 @@ int main(int argc, char* argv[])    {
 
     close_library(library);
 
-    if (!write_binary_file(output_file, output_data))   {
+    if (output_file == "-") {
+        write_stdout(output_data);
+    }
+    else if (!write_binary_file(output_file, output_data))  {
         std::cerr << "Ошибка: не удалось записать выходной файл\n";
         return 1;
     }

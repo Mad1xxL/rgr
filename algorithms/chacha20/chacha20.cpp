@@ -75,7 +75,6 @@ namespace {
     }
 
     void generate_block(std::vector<uint32_t>& state, uint8_t* output)  {
-    
         std::vector<uint32_t> working_state = state;
         for (size_t i = 0; i < 10; ++i) {
             quarter_round(working_state, 0, 4, 8, 12);
@@ -116,10 +115,9 @@ namespace {
             }
 
             for (size_t i = 0; i < chunk_size; ++i) {
-                output->data[processed + i] =
-                    input.data[processed + i] ^ block[i];
+                output->data[processed + i] = input.data[processed + i] ^ block[i];
             }
-        processed += chunk_size;
+            processed += chunk_size;
         }
     }
 }
