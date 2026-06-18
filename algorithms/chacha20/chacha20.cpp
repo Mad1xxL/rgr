@@ -9,7 +9,6 @@ namespace {
     constexpr size_t CHACHA20_KEY_SIZE = CHACHA20_SECRET_KEY_SIZE + CHACHA20_NONCE_SIZE;
     constexpr size_t CHACHA20_BLOCK_SIZE = 64;
 
-    constexpr int SUCCESS = 0;
     constexpr int INVALID_KEY = -1;
     constexpr int INVALID_INPUT = -2;
     constexpr int INVALID_OUTPUT = -3;

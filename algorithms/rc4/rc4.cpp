@@ -7,7 +7,6 @@
 namespace {
     constexpr size_t RC4_KEY_SIZE = 16;
 
-    constexpr int SUCCESS = 0;
     constexpr int INVALID_KEY = -1;
     constexpr int INVALID_INPUT = -2;
     constexpr int INVALID_OUTPUT = -3;

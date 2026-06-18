@@ -5,6 +5,7 @@
 #include <cstdint>
 
 #include <dlfcn.h>
+#include "include/crypto_api.h"
 
 
 bool read_binary_file(const std::string& path, std::vector<uint8_t>& data)  {
@@ -153,15 +154,40 @@ int main(int argc, char* argv[])    {
     if (algorithm == "rc4") {
         library_path = "algorithms/rc4/librc4.dylib";
     }
+
     else if (algorithm == "chacha20")   {
         library_path = "algorithms/chacha20/libchacha20.dylib";
     }
+
     void* library = dlopen(library_path.c_str(), RTLD_LAZY);
+    
     if (library == nullptr) {
         std::cerr << "Ошибка: не удалось загрузить библиотеку\n";
         return 1;
     }
+    
     std::cout << "Библиотека успешно загружена\n";
+
+    using GetAlgorithmInfoFunc = const AlgorithmInfo* (*)();
+
+    GetAlgorithmInfoFunc get_algorithm_info =
+        reinterpret_cast<GetAlgorithmInfoFunc>(
+            dlsym(library, "get_algorithm_info"));
+
+    if (get_algorithm_info == nullptr)  {
+        std::cerr << "Ошибка: не удалось получить функцию get_algorithm_info\n";
+        dlclose(library);
+        return 1;
+    }
+
+    const AlgorithmInfo* info = get_algorithm_info();
+
+    std::cout << "Название алгоритма из библиотеки: "
+              << info->algorithm_name << '\n';
+
+    std::cout << "Размер ключа из библиотеки: "
+              << info->key_size << " байт\n";
+
     dlclose(library);
 
     if (!write_binary_file(output_file, input_data))    {
