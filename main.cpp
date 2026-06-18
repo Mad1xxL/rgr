@@ -81,12 +81,15 @@ void print_help()   {
         << "Использование:\n"
         << "  cryptum [параметры]\n\n"
         << "Параметры:\n"
-        << "  --help                            Показать справку\n"
+        << "  -h, --help                        Показать справку\n"
         << "  -a, --algorithm <алгоритм>        rc4 | chacha20\n"
         << "  -m, --mode <режим>                encrypt | decrypt | generate-key\n"
         << "  -k, --key <файл ключа>            Путь к файлу ключа\n"
         << "  -i, --input <входной файл>        Путь к входному файлу\n"
-        << "  -o, --output <выходной файл>      Путь к выходному файлу\n";
+        << "  -o, --output <выходной файл>      Путь к выходному файлу\n"
+        << "  -s, --save-key <файл>             Сохранить ключ в файл\n"
+        << "  -w, --write-key                   Вывести ключ в stdout\n"
+        << "  -g, --generate-key                Сгенерировать ключ\n";
 }
 
 #ifdef _WIN32
@@ -125,36 +128,76 @@ int main(int argc, char* argv[])    {
         return 0;
     }
 
-    std::string first_argument = argv[1];
-
-    if (first_argument == "--help") {
-        print_help();
-        return 0;
-    }
-
     std::string algorithm;
     std::string mode;
     std::string key_file;
     std::string input_file;
     std::string output_file;
 
-    for (int i = 1; i < argc; ++i)  {
+    for (int i = 1; i < argc; ++i) {
         std::string argument = argv[i];
 
-        if ((argument == "-a" || argument == "--algorithm") && i + 1 < argc)    {
+        if (argument == "-h" || argument == "--help") {
+            print_help();
+            return 0;
+        }
+        else if (argument == "-a" || argument == "--algorithm") {
+            if (i + 1 >= argc) {
+                std::cerr << "Ошибка: после " << argument << " нужно указать алгоритм\n";
+                return 1;
+            }
+
             algorithm = argv[++i];
         }
-        else if ((argument == "-m" || argument == "--mode") && i + 1 < argc)    {
+        else if (argument == "-m" || argument == "--mode") {
+            if (i + 1 >= argc) {
+                std::cerr << "Ошибка: после " << argument << " нужно указать режим\n";
+                return 1;
+            }
+
             mode = argv[++i];
         }
-        else if ((argument == "-k" || argument == "--key") && i + 1 < argc) {
+        else if (argument == "-k" || argument == "--key") {
+            if (i + 1 >= argc) {
+                std::cerr << "Ошибка: после " << argument << " нужно указать файл ключа\n";
+                return 1;
+            }
+
             key_file = argv[++i];
         }
-        else if ((argument == "-i" || argument == "--input") && i + 1 < argc)   {
+        else if (argument == "-i" || argument == "--input") {
+            if (i + 1 >= argc) {
+                std::cerr << "Ошибка: после " << argument << " нужно указать входной файл\n";
+                return 1;
+            }
+
             input_file = argv[++i];
         }
-        else if ((argument == "-o" || argument == "--output") && i + 1 < argc)  {
+        else if (argument == "-o" || argument == "--output") {
+            if (i + 1 >= argc) {
+                std::cerr << "Ошибка: после " << argument << " нужно указать выходной файл\n";
+                return 1;
+            }
+
             output_file = argv[++i];
+        }
+        else if (argument == "-s" || argument == "--save-key") {
+            if (i + 1 >= argc) {
+                std::cerr << "Ошибка: после " << argument << " нужно указать файл для ключа\n";
+                return 1;
+            }
+
+            output_file = argv[++i];
+        }
+        else if (argument == "-w" || argument == "--write-key") {
+            output_file = "-";
+        }
+        else if (argument == "-g" || argument == "--generate-key") {
+            mode = "generate-key";
+        }
+        else {
+            std::cerr << "Ошибка: неизвестный аргумент: " << argument << '\n';
+            return 1;
         }
     }
 
@@ -259,6 +302,12 @@ int main(int argc, char* argv[])    {
 
     const AlgorithmInfo* info = get_algorithm_info();
 
+    if (info == nullptr) {
+        std::cerr << "Ошибка: библиотека вернула пустую информацию об алгоритме\n";
+        close_library(library);
+        return 1;
+    }
+
     if (mode == "generate-key") {
         std::vector<uint8_t> generated_key = generate_key(info->key_size);
 
@@ -277,16 +326,25 @@ int main(int argc, char* argv[])    {
             return 1;
         }
 
-    std::cout << "Ключ успешно сгенерирован\n";
+        std::cerr << "Ключ успешно сгенерирован\n";
 
-    close_library(library);
-    return 0;
-}
+        close_library(library);
+        return 0;
+    }
+
+    if (key_file == "-" && input_file == "-") {
+        std::cerr << "Ошибка: нельзя одновременно читать ключ и входные данные из stdin\n";
+        close_library(library);
+        return 1;
+    }
 
     std::vector<uint8_t> key_data;
     std::vector<uint8_t> input_data;
 
-    if (!read_binary_file(key_file, key_data))   {
+    if (key_file == "-") {
+        read_stdin(key_data);
+    }
+    else if (!read_binary_file(key_file, key_data)) {
         std::cerr << "Ошибка: не удалось открыть файл ключа\n";
         close_library(library);
         return 1;
@@ -349,7 +407,7 @@ int main(int argc, char* argv[])    {
         return 1;
     }
 
-    std::cout << "Выходной файл успешно записан\n";
+    std::cerr << "Выходной файл успешно записан\n";
 
     return 0;
 }
