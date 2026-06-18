@@ -194,14 +194,39 @@ int main(int argc, char* argv[])    {
 
     std::cout << "Функция encrypt успешно загружена\n";
 
+    std::vector<uint8_t> output_data(input_data.size());
+
+    ConstBuffer key_buffer  {
+        key_data.data(),
+        key_data.size()
+    };
+
+    ConstBuffer input_buffer    {
+        input_data.data(),
+        input_data.size()
+    };
+
+    MutBuffer output_buffer {
+        output_data.data(),
+        output_data.size()
+    };
+
+    int result = encrypt_function(key_buffer, input_buffer, &output_buffer);
+
+    if (result < 0) {
+        std::cerr << "Ошибка: шифрование завершилось с кодом " << result << '\n';
+        dlclose(library);
+        return 1;
+    }
+
     dlclose(library);
 
-    if (!write_binary_file(output_file, input_data))    {
+    if (!write_binary_file(output_file, output_data))   {
         std::cerr << "Ошибка: не удалось записать выходной файл\n";
         return 1;
     }
 
     std::cout << "Выходной файл успешно записан\n";
-
+    
     return 0;
 }
