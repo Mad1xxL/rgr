@@ -24,6 +24,19 @@ bool read_binary_file(const std::string& path, std::vector<uint8_t>& data)  {
     return true;
 }
 
+bool write_binary_file(const std::string& path, const std::vector<uint8_t>& data)   {
+    std::ofstream file(path, std::ios::binary);
+
+    if (!file)  {
+        return false;
+    }
+
+    if (!data.empty())  {
+        file.write(reinterpret_cast<const char*>(data.data()), data.size());
+    }
+    return true;
+}
+
 void print_help()   {
     std::cout
         << "Cryptum\n"
@@ -133,6 +146,13 @@ int main(int argc, char* argv[])    {
 
     std::cout << "Размер ключа: " << key_data.size() << " байт\n";
     std::cout << "Размер входного файла: " << input_data.size() << " байт\n";
+
+    if (!write_binary_file(output_file, input_data))    {
+        std::cerr << "Ошибка: не удалось записать выходной файл\n";
+        return 1;
+    }
+
+    std::cout << "Выходной файл успешно записан\n";
 
     return 0;
 }
