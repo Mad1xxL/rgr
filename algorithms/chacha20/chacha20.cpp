@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <cstdint>
+#include <cstddef>
 
 namespace {
     constexpr size_t CHACHA20_SECRET_KEY_SIZE = 32;
@@ -139,11 +140,15 @@ extern "C" int encrypt(ConstBuffer key, ConstBuffer input, MutBuffer* output)   
         return INVALID_INPUT;
     }
 
-    if (output == nullptr || output->data == nullptr) {
+        if (output == nullptr) {
         return INVALID_OUTPUT;
     }
 
-    if (output->size < input.size)    {
+    if (input.size > 0 && output->data == nullptr) {
+        return INVALID_OUTPUT;
+    }
+
+    if (output->size < input.size) {
         return INVALID_OUTPUT;
     }
 
@@ -159,7 +164,11 @@ extern "C" int decrypt(ConstBuffer key, ConstBuffer input, MutBuffer* output)   
         return INVALID_INPUT;
     }
 
-    if (output == nullptr || output->data == nullptr) {
+    if (output == nullptr) {
+        return INVALID_OUTPUT;
+    }
+
+    if (input.size > 0 && output->data == nullptr) {
         return INVALID_OUTPUT;
     }
 

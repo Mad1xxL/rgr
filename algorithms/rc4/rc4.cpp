@@ -11,7 +11,8 @@ namespace {
     constexpr int INVALID_INPUT = -2;
     constexpr int INVALID_OUTPUT = -3;
 
-    const AlgorithmInfo info = {"RC4", RC4_KEY_SIZE};
+    const AlgorithmInfo info = {
+        "RC4", RC4_KEY_SIZE};
     
     // Перемешивание массива state(внутреннего состояния RC4) используя ключ
     void ksa(const uint8_t* key, size_t key_size, std::vector<uint8_t>& state)  {
@@ -65,7 +66,11 @@ extern "C" int encrypt(ConstBuffer key, ConstBuffer input, MutBuffer* output)   
         return INVALID_INPUT;
     }
 
-    if (output == nullptr || output->data == nullptr) {
+    if (output == nullptr) {
+        return INVALID_OUTPUT;
+    }
+
+    if (input.size > 0 && output->data == nullptr) {
         return INVALID_OUTPUT;
     }
 
@@ -85,7 +90,11 @@ extern "C" int decrypt(ConstBuffer key, ConstBuffer input, MutBuffer* output)   
         return INVALID_INPUT;
     }
 
-    if (output == nullptr || output->data == nullptr) {
+    if (output == nullptr) {
+        return INVALID_OUTPUT;
+    }
+
+    if (input.size > 0 && output->data == nullptr) {
         return INVALID_OUTPUT;
     }
 
