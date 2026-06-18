@@ -3,6 +3,7 @@
 #include <fstream>
 #include <vector>
 #include <cstdint>
+#include <random>
 
 #include <dlfcn.h>
 #include "include/crypto_api.h"
@@ -38,6 +39,17 @@ bool write_binary_file(const std::string& path, const std::vector<uint8_t>& data
         file.write(reinterpret_cast<const char*>(data.data()), data.size());
     }
     return true;
+}
+
+std::vector<uint8_t> generate_key(size_t size)  {
+    std::vector<uint8_t> key(size);
+    std::random_device random_device;
+
+    for (size_t i = 0; i < key.size(); ++i) {
+        key[i] = static_cast<uint8_t>(random_device());
+    }
+
+    return key;
 }
 
 void print_help()   {
@@ -108,17 +120,17 @@ int main(int argc, char* argv[])    {
         return 1;
     }
 
-    if (mode != "encrypt" && mode != "decrypt") {
+    if (mode != "encrypt" && mode != "decrypt" && mode != "generate-key") {
         std::cerr << "Ошибка: режим не поддерживается\n";
         return 1;
     }
 
-    if (key_file.empty())   {
+    if (mode != "generate-key" && key_file.empty()) {
         std::cerr << "Ошибка: не указан файл ключа\n";
         return 1;
     }
 
-    if (input_file.empty()) {
+    if (mode != "generate-key" && input_file.empty())   {
         std::cerr << "Ошибка: не указан входной файл\n";
         return 1;
     }
@@ -133,22 +145,6 @@ int main(int argc, char* argv[])    {
     std::cout << "Файл ключа: " << key_file << '\n';
     std::cout << "Входной файл: " << input_file << '\n';
     std::cout << "Выходной файл: " << output_file << '\n';
-
-    std::vector<uint8_t> key_data;
-    std::vector<uint8_t> input_data;
-
-    if (!read_binary_file(key_file, key_data))  {
-        std::cerr << "Ошибка: не удалось открыть файл ключа\n";
-        return 1;
-    }
-
-    if (!read_binary_file(input_file, input_data))  {
-        std::cerr << "Ошибка: не удалось открыть входной файл\n";
-        return 1;
-    }
-
-    std::cout << "Размер ключа: " << key_data.size() << " байт\n";
-    std::cout << "Размер входного файла: " << input_data.size() << " байт\n";
 
     std::string library_path;
     if (algorithm == "rc4") {
@@ -188,7 +184,7 @@ int main(int argc, char* argv[])    {
         dlclose(library);
         return 1;
     }
-    
+
     if (decrypt_function == nullptr)    {
         std::cerr << "Ошибка: не удалось получить функцию decrypt\n";
         dlclose(library);
@@ -200,6 +196,36 @@ int main(int argc, char* argv[])    {
     std::cout << "Название алгоритма из библиотеки: " << info->algorithm_name << '\n';
 
     std::cout << "Размер ключа из библиотеки: " << info->key_size << " байт\n";
+
+    if (mode == "generate-key") {
+        std::vector<uint8_t> generated_key = generate_key(info->key_size);
+
+        if (!write_binary_file(output_file, generated_key)) {
+            std::cerr << "Ошибка: не удалось записать файл ключа\n";
+            dlclose(library);
+            return 1;
+        }
+
+        std::cout << "Ключ успешно сгенерирован\n";
+
+        dlclose(library);
+        return 0;
+    }
+
+    std::vector<uint8_t> key_data;
+    std::vector<uint8_t> input_data;
+
+    if (!read_binary_file(key_file, key_data))  {
+        std::cerr << "Ошибка: не удалось открыть файл ключа\n";
+        return 1;
+    }
+
+    if (!read_binary_file(input_file, input_data))  {
+        std::cerr << "Ошибка: не удалось открыть входной файл\n";
+        return 1;
+    }
+    std::cout << "Размер ключа: " << key_data.size() << " байт\n";
+    std::cout << "Размер входного файла: " << input_data.size() << " байт\n";
 
     std::cout << "Функции encrypt и decrypt успешно загружены\n";
 

@@ -76,48 +76,49 @@ namespace {
 
     void generate_block(std::vector<uint32_t>& state, uint8_t* output)  {
     
-    std::vector<uint32_t> working_state = state;
-    for (size_t i = 0; i < 10; ++i) {
-        quarter_round(working_state, 0, 4, 8, 12);
-        quarter_round(working_state, 1, 5, 9, 13);
-        quarter_round(working_state, 2, 6, 10, 14);
-        quarter_round(working_state, 3, 7, 11, 15);
+        std::vector<uint32_t> working_state = state;
+        for (size_t i = 0; i < 10; ++i) {
+            quarter_round(working_state, 0, 4, 8, 12);
+            quarter_round(working_state, 1, 5, 9, 13);
+            quarter_round(working_state, 2, 6, 10, 14);
+            quarter_round(working_state, 3, 7, 11, 15);
 
-        quarter_round(working_state, 0, 5, 10, 15);
-        quarter_round(working_state, 1, 6, 11, 12);
-        quarter_round(working_state, 2, 7, 8, 13);
-        quarter_round(working_state, 3, 4, 9, 14);
-    }
-    for (size_t i = 0; i < 16; ++i) {
-        working_state[i] += state[i];
-        save_32(working_state[i], output + i * 4);
-    }
-    ++state[12];
+            quarter_round(working_state, 0, 5, 10, 15);
+            quarter_round(working_state, 1, 6, 11, 12);
+            quarter_round(working_state, 2, 7, 8, 13);
+            quarter_round(working_state, 3, 4, 9, 14);
+        }
+
+        for (size_t i = 0; i < 16; ++i) {
+            working_state[i] += state[i];
+            save_32(working_state[i], output + i * 4);
+        }
+        ++state[12];
     }
 
     void chacha20_process(ConstBuffer key, ConstBuffer input, MutBuffer* output)    {
-    const uint8_t* secret_key = key.data;
-    const uint8_t* nonce = key.data + CHACHA20_SECRET_KEY_SIZE;
+        const uint8_t* secret_key = key.data;
+        const uint8_t* nonce = key.data + CHACHA20_SECRET_KEY_SIZE;
 
-    std::vector<uint32_t> state = create_initial_state(secret_key, nonce);
+        std::vector<uint32_t> state = create_initial_state(secret_key, nonce);
 
-    std::vector<uint8_t> block(CHACHA20_BLOCK_SIZE);
+        std::vector<uint8_t> block(CHACHA20_BLOCK_SIZE);
 
-    size_t processed = 0;
+        size_t processed = 0;
 
-    while (processed < input.size)  {
-        generate_block(state, block.data());
+        while (processed < input.size)  {
+            generate_block(state, block.data());
 
-        size_t chunk_size = CHACHA20_BLOCK_SIZE;
+            size_t chunk_size = CHACHA20_BLOCK_SIZE;
 
-        if (input.size - processed < CHACHA20_BLOCK_SIZE)   {
-            chunk_size = input.size - processed;
-        }
+            if (input.size - processed < CHACHA20_BLOCK_SIZE)   {
+                chunk_size = input.size - processed;
+            }
 
-        for (size_t i = 0; i < chunk_size; ++i) {
-            output->data[processed + i] =
-                input.data[processed + i] ^ block[i];
-        }
+            for (size_t i = 0; i < chunk_size; ++i) {
+                output->data[processed + i] =
+                    input.data[processed + i] ^ block[i];
+            }
         processed += chunk_size;
         }
     }

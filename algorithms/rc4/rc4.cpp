@@ -11,12 +11,9 @@ namespace {
     constexpr int INVALID_INPUT = -2;
     constexpr int INVALID_OUTPUT = -3;
 
-    const AlgorithmInfo info = {
-        "RC4",
-        RC4_KEY_SIZE
-    };
+    const AlgorithmInfo info = {"RC4", RC4_KEY_SIZE};
     
-    //Перемешивание массива state(внутреннего состояния RC4) используя ключ
+    // Перемешивание массива state(внутреннего состояния RC4) используя ключ
     void ksa(const uint8_t* key, size_t key_size, std::vector<uint8_t>& state)  {
         state.resize(256);
 
@@ -31,7 +28,7 @@ namespace {
         }
     }
 
-    //Генерация ключевого потока и шифрование/расшифрования(XOR)
+    // Генерация ключевого потока и шифрование/расшифрования(XOR)
     void rc4_process(ConstBuffer key, ConstBuffer input, MutBuffer* output) {
         std::vector<uint8_t> state;
         ksa(key.data, key.size, state);
