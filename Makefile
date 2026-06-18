@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -Wextra
+CXXFLAGS = -std=c++17 -Wall -Wextra -Iinclude
 LDFLAGS =
 
 ifeq ($(OS),Windows_NT)
@@ -10,13 +10,15 @@ else
 
 	ifeq ($(UNAME_S),Darwin)
 		LIB_EXT = dylib
-		SHARED_FLAG = -dynamiclib
+		SHARED_FLAG = -dynamiclib -fPIC
 	else
 		LIB_EXT = so
 		SHARED_FLAG = -shared -fPIC
 		LDFLAGS = -ldl
 	endif
 endif
+
+.PHONY: all rc4 chacha20 cryptum clean
 
 all: rc4 chacha20 cryptum
 
@@ -33,7 +35,9 @@ clean:
 	rm -f cryptum
 	rm -f algorithms/rc4/librc4.so
 	rm -f algorithms/rc4/librc4.dylib
-	rm -f algorithms/rc4/rc4.dll
+	rm -f algorithms/rc4/librc4.dll
 	rm -f algorithms/chacha20/libchacha20.so
 	rm -f algorithms/chacha20/libchacha20.dylib
-	rm -f algorithms/chacha20/chacha20.dll
+	rm -f algorithms/chacha20/libchacha20.dll
+	rm -f algorithms/rc4/librc4.*-rc4.cpp.*
+	rm -f algorithms/chacha20/libchacha20.*-chacha20.cpp.*
