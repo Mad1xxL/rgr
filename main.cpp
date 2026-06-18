@@ -64,6 +64,16 @@ bool write_stdout(const std::vector<uint8_t>& data) {
     return true;
 }
 
+void secure_clear(std::vector<uint8_t>& data) {
+    volatile uint8_t* pointer = data.data();
+
+    for (size_t i = 0; i < data.size(); ++i) {
+        pointer[i] = 0;
+    }
+
+    data.clear();
+}
+
 std::vector<uint8_t> generate_key(size_t size)  {
     std::vector<uint8_t> key(size);
     std::random_device random_device;
@@ -328,6 +338,8 @@ int main(int argc, char* argv[])    {
 
         std::cerr << "Ключ успешно сгенерирован\n";
 
+        secure_clear(generated_key);
+
         close_library(library);
         return 0;
     }
@@ -408,6 +420,10 @@ int main(int argc, char* argv[])    {
     }
 
     std::cerr << "Выходной файл успешно записан\n";
+
+    secure_clear(key_data);
+    secure_clear(input_data);
+    secure_clear(output_data);
 
     return 0;
 }
