@@ -4,6 +4,8 @@
 #include <vector>
 #include <cstdint>
 
+#include <dlfcn.h>
+
 
 bool read_binary_file(const std::string& path, std::vector<uint8_t>& data)  {
     std::ifstream file(path, std::ios::binary);
@@ -146,6 +148,17 @@ int main(int argc, char* argv[])    {
 
     std::cout << "Размер ключа: " << key_data.size() << " байт\n";
     std::cout << "Размер входного файла: " << input_data.size() << " байт\n";
+
+    void* library = dlopen("algorithms/rc4/librc4.dylib", RTLD_LAZY);
+
+    if (library == nullptr) {
+        std::cerr << "Ошибка: не удалось загрузить библиотеку RC4\n";
+        return 1;
+    }
+
+    std::cout << "Библиотека RC4 успешно загружена\n";
+
+    dlclose(library);
 
     if (!write_binary_file(output_file, input_data))    {
         std::cerr << "Ошибка: не удалось записать выходной файл\n";
