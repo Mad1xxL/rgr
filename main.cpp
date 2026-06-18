@@ -169,10 +169,10 @@ int main(int argc, char* argv[])    {
     std::cout << "Библиотека успешно загружена\n";
 
     using GetAlgorithmInfoFunc = const AlgorithmInfo* (*)();
-
-    GetAlgorithmInfoFunc get_algorithm_info =
-        reinterpret_cast<GetAlgorithmInfoFunc>(
-            dlsym(library, "get_algorithm_info"));
+    GetAlgorithmInfoFunc get_algorithm_info = reinterpret_cast<GetAlgorithmInfoFunc>(dlsym(library, "get_algorithm_info"));
+    
+    using EncryptFunc = int (*)(ConstBuffer, ConstBuffer, MutBuffer*);
+    EncryptFunc encrypt_function = reinterpret_cast<EncryptFunc>(dlsym(library, "encrypt"));
 
     if (get_algorithm_info == nullptr)  {
         std::cerr << "Ошибка: не удалось получить функцию get_algorithm_info\n";
@@ -180,13 +180,19 @@ int main(int argc, char* argv[])    {
         return 1;
     }
 
+    if (encrypt_function == nullptr)    {
+        std::cerr << "Ошибка: не удалось получить функцию encrypt\n";
+        dlclose(library);
+        return 1;
+    }
+
     const AlgorithmInfo* info = get_algorithm_info();
 
-    std::cout << "Название алгоритма из библиотеки: "
-              << info->algorithm_name << '\n';
+    std::cout << "Название алгоритма из библиотеки: " << info->algorithm_name << '\n';
 
-    std::cout << "Размер ключа из библиотеки: "
-              << info->key_size << " байт\n";
+    std::cout << "Размер ключа из библиотеки: " << info->key_size << " байт\n";
+
+    std::cout << "Функция encrypt успешно загружена\n";
 
     dlclose(library);
 
