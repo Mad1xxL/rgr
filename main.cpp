@@ -173,8 +173,17 @@ int main(int argc, char* argv[])    {
     using DecryptFunc = int (*)(ConstBuffer, ConstBuffer, MutBuffer*);
     DecryptFunc decrypt_function = reinterpret_cast<DecryptFunc>(dlsym(library, "decrypt"));
 
+    using GetOutputSizeFunc = size_t (*)(size_t, int);
+    GetOutputSizeFunc get_output_size = reinterpret_cast<GetOutputSizeFunc>(dlsym(library, "get_output_size"));
+
     if (get_algorithm_info == nullptr)  {
         std::cerr << "Ошибка: не удалось получить функцию get_algorithm_info\n";
+        dlclose(library);
+        return 1;
+    }
+    
+    if (get_output_size == nullptr) {
+        std::cerr << "Ошибка: не удалось получить функцию get_output_size\n";
         dlclose(library);
         return 1;
     }
@@ -229,7 +238,13 @@ int main(int argc, char* argv[])    {
 
     std::cout << "Функции encrypt и decrypt успешно загружены\n";
 
-    std::vector<uint8_t> output_data(input_data.size());
+    int operation_type = 0;
+
+    if (mode == "decrypt")  {
+        operation_type = 1;
+    }
+    size_t output_size = get_output_size(input_data.size(), operation_type);
+    std::vector<uint8_t> output_data(output_size);
 
     ConstBuffer key_buffer  {
         key_data.data(),
