@@ -174,6 +174,9 @@ int main(int argc, char* argv[])    {
     using EncryptFunc = int (*)(ConstBuffer, ConstBuffer, MutBuffer*);
     EncryptFunc encrypt_function = reinterpret_cast<EncryptFunc>(dlsym(library, "encrypt"));
 
+    using DecryptFunc = int (*)(ConstBuffer, ConstBuffer, MutBuffer*);
+    DecryptFunc decrypt_function = reinterpret_cast<DecryptFunc>(dlsym(library, "decrypt"));
+
     if (get_algorithm_info == nullptr)  {
         std::cerr << "Ошибка: не удалось получить функцию get_algorithm_info\n";
         dlclose(library);
@@ -185,6 +188,12 @@ int main(int argc, char* argv[])    {
         dlclose(library);
         return 1;
     }
+    
+    if (decrypt_function == nullptr)    {
+        std::cerr << "Ошибка: не удалось получить функцию decrypt\n";
+        dlclose(library);
+        return 1;
+    }
 
     const AlgorithmInfo* info = get_algorithm_info();
 
@@ -192,7 +201,7 @@ int main(int argc, char* argv[])    {
 
     std::cout << "Размер ключа из библиотеки: " << info->key_size << " байт\n";
 
-    std::cout << "Функция encrypt успешно загружена\n";
+    std::cout << "Функции encrypt и decrypt успешно загружены\n";
 
     std::vector<uint8_t> output_data(input_data.size());
 
@@ -211,10 +220,17 @@ int main(int argc, char* argv[])    {
         output_data.size()
     };
 
-    int result = encrypt_function(key_buffer, input_buffer, &output_buffer);
+    int result = 0;
+
+    if (mode == "encrypt")  {
+        result = encrypt_function(key_buffer, input_buffer, &output_buffer);
+    }
+    else    {
+        result = decrypt_function(key_buffer, input_buffer, &output_buffer);
+    }
 
     if (result < 0) {
-        std::cerr << "Ошибка: шифрование завершилось с кодом " << result << '\n';
+        std::cerr << "Ошибка: операция завершилась с кодом " << result << '\n';
         dlclose(library);
         return 1;
     }
@@ -227,6 +243,6 @@ int main(int argc, char* argv[])    {
     }
 
     std::cout << "Выходной файл успешно записан\n";
-    
+
     return 0;
 }
