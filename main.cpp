@@ -58,12 +58,12 @@ void print_help()   {
         << "Использование:\n"
         << "  cryptum [параметры]\n\n"
         << "Параметры:\n"
-        << "  --help                  Показать справку\n"
-        << "  -a <алгоритм>           rc4 | chacha20\n"
-        << "  -m <режим>              encrypt | decrypt\n"
-        << "  -k <файл ключа>         Путь к файлу ключа\n"
-        << "  -i <входной файл>       Путь к входному файлу\n"
-        << "  -o <выходной файл>      Путь к выходному файлу\n";
+        << "  --help                            Показать справку\n"
+        << "  -a, --algorithm <алгоритм>        rc4 | chacha20\n"
+        << "  -m, --mode <режим>                encrypt | decrypt | generate-key\n"
+        << "  -k, --key <файл ключа>            Путь к файлу ключа\n"
+        << "  -i, --input <входной файл>        Путь к входному файлу\n"
+        << "  -o, --output <выходной файл>      Путь к выходному файлу\n";
 }
 
 int main(int argc, char* argv[])    {
@@ -88,19 +88,19 @@ int main(int argc, char* argv[])    {
     for (int i = 1; i < argc; ++i)  {
         std::string argument = argv[i];
 
-        if (argument == "-a" && i + 1 < argc)   {
+        if ((argument == "-a" || argument == "--algorithm") && i + 1 < argc)    {
             algorithm = argv[++i];
         }
-        else if (argument == "-m" && i + 1 < argc)  {
+        else if ((argument == "-m" || argument == "--mode") && i + 1 < argc)    {
             mode = argv[++i];
         }
-        else if (argument == "-k" && i + 1 < argc)  {
+        else if ((argument == "-k" || argument == "--key") && i + 1 < argc) {
             key_file = argv[++i];
         }
-        else if (argument == "-i" && i + 1 < argc)  {
+        else if ((argument == "-i" || argument == "--input") && i + 1 < argc)   {
             input_file = argv[++i];
         }
-        else if (argument == "-o" && i + 1 < argc)  {
+        else if ((argument == "-o" || argument == "--output") && i + 1 < argc)  {
             output_file = argv[++i];
         }
     }
@@ -224,18 +224,20 @@ int main(int argc, char* argv[])    {
     std::vector<uint8_t> key_data;
     std::vector<uint8_t> input_data;
 
-    if (!read_binary_file(key_file, key_data))  {
+    if (!read_binary_file(key_file, key_data))   {
         std::cerr << "Ошибка: не удалось открыть файл ключа\n";
+        dlclose(library);
         return 1;
     }
 
     if (!read_binary_file(input_file, input_data))  {
         std::cerr << "Ошибка: не удалось открыть входной файл\n";
+        dlclose(library);
         return 1;
     }
+
     std::cout << "Размер ключа: " << key_data.size() << " байт\n";
     std::cout << "Размер входного файла: " << input_data.size() << " байт\n";
-
     std::cout << "Функции encrypt и decrypt успешно загружены\n";
 
     int operation_type = 0;
