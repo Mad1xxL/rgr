@@ -74,6 +74,21 @@ int main(int argc, char* argv[])    {
         return 1;
     }
 
+    if (key_file.empty())   {
+        std::cerr << "Ошибка: не указан файл ключа\n";
+        return 1;
+    }
+
+    if (input_file.empty()) {
+        std::cerr << "Ошибка: не указан входной файл\n";
+        return 1;
+    }
+
+    if (output_file.empty())    {
+        std::cerr << "Ошибка: не указан выходной файл\n";
+        return 1;
+    }
+
     std::cout << "Алгоритм: " << algorithm << '\n';
     std::cout << "Режим: " << mode << '\n';
     std::cout << "Файл ключа: " << key_file << '\n';
