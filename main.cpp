@@ -1,5 +1,28 @@
 #include <iostream>
 #include <string>
+#include <fstream>
+#include <vector>
+#include <cstdint>
+
+
+bool read_binary_file(const std::string& path, std::vector<uint8_t>& data)  {
+    std::ifstream file(path, std::ios::binary);
+
+    if (!file)  {
+        return false;
+    }
+
+    file.seekg(0, std::ios::end);
+    size_t size = static_cast<size_t>(file.tellg());
+    file.seekg(0, std::ios::beg);
+
+    data.resize(size);
+
+    if (size > 0)   {
+        file.read(reinterpret_cast<char*>(data.data()), size);
+    }
+    return true;
+}
 
 void print_help()   {
     std::cout
@@ -94,6 +117,22 @@ int main(int argc, char* argv[])    {
     std::cout << "Файл ключа: " << key_file << '\n';
     std::cout << "Входной файл: " << input_file << '\n';
     std::cout << "Выходной файл: " << output_file << '\n';
+
+    std::vector<uint8_t> key_data;
+    std::vector<uint8_t> input_data;
+
+    if (!read_binary_file(key_file, key_data))  {
+        std::cerr << "Ошибка: не удалось открыть файл ключа\n";
+        return 1;
+    }
+
+    if (!read_binary_file(input_file, input_data))  {
+        std::cerr << "Ошибка: не удалось открыть входной файл\n";
+        return 1;
+    }
+
+    std::cout << "Размер ключа: " << key_data.size() << " байт\n";
+    std::cout << "Размер входного файла: " << input_data.size() << " байт\n";
 
     return 0;
 }
