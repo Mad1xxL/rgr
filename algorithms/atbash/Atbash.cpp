@@ -1,4 +1,4 @@
-#include "atbash.h"
+#include "Atbash.h"
 
 static const AlgorithmInfo ALGORITHM_INFO = {
     "atbash",
