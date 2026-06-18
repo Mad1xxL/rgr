@@ -149,15 +149,19 @@ int main(int argc, char* argv[])    {
     std::cout << "Размер ключа: " << key_data.size() << " байт\n";
     std::cout << "Размер входного файла: " << input_data.size() << " байт\n";
 
-    void* library = dlopen("algorithms/rc4/librc4.dylib", RTLD_LAZY);
-
+    std::string library_path;
+    if (algorithm == "rc4") {
+        library_path = "algorithms/rc4/librc4.dylib";
+    }
+    else if (algorithm == "chacha20")   {
+        library_path = "algorithms/chacha20/libchacha20.dylib";
+    }
+    void* library = dlopen(library_path.c_str(), RTLD_LAZY);
     if (library == nullptr) {
-        std::cerr << "Ошибка: не удалось загрузить библиотеку RC4\n";
+        std::cerr << "Ошибка: не удалось загрузить библиотеку\n";
         return 1;
     }
-
-    std::cout << "Библиотека RC4 успешно загружена\n";
-
+    std::cout << "Библиотека успешно загружена\n";
     dlclose(library);
 
     if (!write_binary_file(output_file, input_data))    {
