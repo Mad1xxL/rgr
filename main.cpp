@@ -5,8 +5,12 @@
 #include <cstdint>
 #include <random>
 
-#include <dlfcn.h>
 #include "include/crypto_api.h"
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <dlfcn.h>
+#endif
 
 
 bool read_binary_file(const std::string& path, std::vector<uint8_t>& data)  {
@@ -65,6 +69,38 @@ void print_help()   {
         << "  -i, --input <входной файл>        Путь к входному файлу\n"
         << "  -o, --output <выходной файл>      Путь к выходному файлу\n";
 }
+
+#ifdef _WIN32
+using LibraryHandle = HMODULE;
+#else
+using LibraryHandle = void*;
+#endif
+
+LibraryHandle open_library(const std::string& path) {
+#ifdef _WIN32
+    return LoadLibraryA(path.c_str());
+#else
+    return dlopen(path.c_str(), RTLD_LAZY);
+#endif
+}
+
+void* load_function(LibraryHandle library, const char* name)    {
+#ifdef _WIN32
+    return reinterpret_cast<void*>(GetProcAddress(library, name));
+#else
+    return dlsym(library, name);
+#endif
+}
+
+void close_library(LibraryHandle library)   {
+#ifdef _WIN32
+    FreeLibrary(library);
+#else
+    dlclose(library);
+#endif
+}
+
+
 
 int main(int argc, char* argv[])    {
     if (argc == 1)  {
@@ -147,56 +183,68 @@ int main(int argc, char* argv[])    {
     std::cout << "Выходной файл: " << output_file << '\n';
 
     std::string library_path;
+
     if (algorithm == "rc4") {
+    #ifdef _WIN32
+        library_path = "algorithms/rc4/rc4.dll";
+    #elif __APPLE__
         library_path = "algorithms/rc4/librc4.dylib";
+    #else
+        library_path = "algorithms/rc4/librc4.so";
+    #endif
     }
-
     else if (algorithm == "chacha20")   {
+    #ifdef _WIN32
+        library_path = "algorithms/chacha20/chacha20.dll";
+    #elif __APPLE__
         library_path = "algorithms/chacha20/libchacha20.dylib";
+    #else
+        library_path = "algorithms/chacha20/libchacha20.so";
+    #endif
     }
-
-    void* library = dlopen(library_path.c_str(), RTLD_LAZY);
     
+    LibraryHandle library = open_library(library_path);
+
     if (library == nullptr) {
         std::cerr << "Ошибка: не удалось загрузить библиотеку\n";
         return 1;
     }
-    
+
     std::cout << "Библиотека успешно загружена\n";
 
     using GetAlgorithmInfoFunc = const AlgorithmInfo* (*)();
-    GetAlgorithmInfoFunc get_algorithm_info = reinterpret_cast<GetAlgorithmInfoFunc>(dlsym(library, "get_algorithm_info"));
+    GetAlgorithmInfoFunc get_algorithm_info = reinterpret_cast<GetAlgorithmInfoFunc>(load_function(library, "get_algorithm_info"));
     
     using EncryptFunc = int (*)(ConstBuffer, ConstBuffer, MutBuffer*);
-    EncryptFunc encrypt_function = reinterpret_cast<EncryptFunc>(dlsym(library, "encrypt"));
+    EncryptFunc encrypt_function = reinterpret_cast<EncryptFunc>(load_function(library, "encrypt"));
 
     using DecryptFunc = int (*)(ConstBuffer, ConstBuffer, MutBuffer*);
-    DecryptFunc decrypt_function = reinterpret_cast<DecryptFunc>(dlsym(library, "decrypt"));
+    DecryptFunc decrypt_function = reinterpret_cast<DecryptFunc>(load_function(library, "decrypt"));
 
     using GetOutputSizeFunc = size_t (*)(size_t, int);
-    GetOutputSizeFunc get_output_size = reinterpret_cast<GetOutputSizeFunc>(dlsym(library, "get_output_size"));
+    GetOutputSizeFunc get_output_size = reinterpret_cast<GetOutputSizeFunc>(load_function(library, "get_output_size"));
 
     if (get_algorithm_info == nullptr)  {
         std::cerr << "Ошибка: не удалось получить функцию get_algorithm_info\n";
-        dlclose(library);
+        close_library(library);
         return 1;
     }
     
     if (get_output_size == nullptr) {
         std::cerr << "Ошибка: не удалось получить функцию get_output_size\n";
-        dlclose(library);
+        close_library(library);
         return 1;
     }
 
     if (encrypt_function == nullptr)    {
         std::cerr << "Ошибка: не удалось получить функцию encrypt\n";
-        dlclose(library);
+        close_library(library);
         return 1;
     }
 
     if (decrypt_function == nullptr)    {
         std::cerr << "Ошибка: не удалось получить функцию decrypt\n";
-        dlclose(library);
+        close_library(library);
         return 1;
     }
 
@@ -211,13 +259,13 @@ int main(int argc, char* argv[])    {
 
         if (!write_binary_file(output_file, generated_key)) {
             std::cerr << "Ошибка: не удалось записать файл ключа\n";
-            dlclose(library);
+            close_library(library);
             return 1;
         }
 
         std::cout << "Ключ успешно сгенерирован\n";
 
-        dlclose(library);
+        close_library(library);
         return 0;
     }
 
@@ -226,13 +274,13 @@ int main(int argc, char* argv[])    {
 
     if (!read_binary_file(key_file, key_data))   {
         std::cerr << "Ошибка: не удалось открыть файл ключа\n";
-        dlclose(library);
+        close_library(library);
         return 1;
     }
 
     if (!read_binary_file(input_file, input_data))  {
         std::cerr << "Ошибка: не удалось открыть входной файл\n";
-        dlclose(library);
+        close_library(library);
         return 1;
     }
 
@@ -274,11 +322,11 @@ int main(int argc, char* argv[])    {
 
     if (result < 0) {
         std::cerr << "Ошибка: операция завершилась с кодом " << result << '\n';
-        dlclose(library);
+        close_library(library);
         return 1;
     }
 
-    dlclose(library);
+    close_library(library);
 
     if (!write_binary_file(output_file, output_data))   {
         std::cerr << "Ошибка: не удалось записать выходной файл\n";
