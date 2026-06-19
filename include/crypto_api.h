@@ -20,11 +20,8 @@ struct AlgorithmInfo {
 };
 
 extern "C" const AlgorithmInfo* get_algorithm_info();
-
 extern "C" size_t get_output_size(size_t input_size, int operation_type);
-
 extern "C" int encrypt(ConstBuffer key, ConstBuffer input, MutBuffer* output);
-
 extern "C" int decrypt(ConstBuffer key, ConstBuffer input, MutBuffer* output);
 
 #endif
