@@ -1,73 +1,56 @@
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -Wextra -Werror -fPIC
-LDFLAGS = -ldl
+CXXFLAGS = -std=c++17 -Wall -Wextra -Iinclude
+LDFLAGS =
 
-BIN_DIR = bin
-INCLUDE_DIR = include
-ALGO_DIR = algorithms
-SRC_DIR = src
-
-# Ваши алгоритмы
-CIPHERS = atbash vernam
-
-# Определение платформы
+ifeq ($(OS),Windows_NT)
+LIB_EXT = dll
+LIB_PREFIX =
+SHARED_FLAG = -shared
+PROGRAM = cryptum.exe
+else
 UNAME_S := $(shell uname -s)
-ifeq ($(UNAME_S),Linux)
-    SO_EXT = so
-    LIB_PREFIX = lib
+
+LIB_PREFIX = lib
+PROGRAM = cryptum
+
+ifeq ($(UNAME_S),Darwin)
+LIB_EXT = dylib
+SHARED_FLAG = -dynamiclib -fPIC
+else
+LIB_EXT = so
+SHARED_FLAG = -shared -fPIC
+LDFLAGS = -ldl
+endif
 endif
 
-# Цель по умолчанию - компилирует оба шифра
-all: $(BIN_DIR) $(CIPHERS) cryptum
+ATBASH_SRC = algorithms/atbash/Atbash.cpp
+VERNAM_SRC = algorithms/vernam/Vernam.cpp
 
-# Создание директорий
-$(BIN_DIR):
-	mkdir -p $(BIN_DIR)
-	mkdir -p $(BIN_DIR)/tests
-	@for cipher in $(CIPHERS); do \
-	    mkdir -p $(BIN_DIR)/$$cipher; \
-	done
+ATBASH_LIB = algorithms/atbash/$(LIB_PREFIX)atbash.$(LIB_EXT)
+VERNAM_LIB = algorithms/vernam/$(LIB_PREFIX)vernam.$(LIB_EXT)
 
-# Компиляция библиотек
-$(CIPHERS): %: $(BIN_DIR)
-	$(CXX) $(CXXFLAGS) -shared $(ALGO_DIR)/$*/$*.cpp -I$(INCLUDE_DIR) -o $(BIN_DIR)/$*/$(LIB_PREFIX)$*.$(SO_EXT)
-	@echo "✅ $* library compiled"
+.PHONY: all atbash vernam cryptum clean
 
-# Компиляция обоих шифров одновременно
-both: $(CIPHERS)
-	@echo "✅ Both Atbash and Vernam libraries compiled successfully"
+all: atbash vernam cryptum
 
-# Сборка главной программы
-cryptum: $(BIN_DIR)
-	$(CXX) $(CXXFLAGS) $(SRC_DIR)/main.cpp -I$(INCLUDE_DIR) $(LDFLAGS) -o $(BIN_DIR)/cryptum
-	@echo "✅ Cryptum executable compiled"
+atbash: $(ATBASH_LIB)
 
-# Тесты
-tests: $(BIN_DIR) both
-	$(CXX) $(CXXFLAGS) tests/test_atbash_vernam.cpp -I$(INCLUDE_DIR) $(LDFLAGS) -o $(BIN_DIR)/tests/test_atbash_vernam
-	@echo "✅ Tests compiled"
+$(ATBASH_LIB): $(ATBASH_SRC)
+	$(CXX) $(CXXFLAGS) $(SHARED_FLAG) $(ATBASH_SRC) -o $(ATBASH_LIB)
 
-# Запуск тестов
-test: tests
-	./$(BIN_DIR)/tests/test_atbash_vernam
+vernam: $(VERNAM_LIB)
 
-# Очистка
+$(VERNAM_LIB): $(VERNAM_SRC)
+	$(CXX) $(CXXFLAGS) $(SHARED_FLAG) $(VERNAM_SRC) -o $(VERNAM_LIB)
+
+cryptum: main.cpp include/crypto_api.h
+	$(CXX) $(CXXFLAGS) main.cpp -o $(PROGRAM) $(LDFLAGS)
+
 clean:
-	rm -rf $(BIN_DIR)
-	@echo "🧹 Cleaned"
-
-# Пересборка
-rebuild: clean all
-
-# Запуск программы
-run: cryptum
-	./$(BIN_DIR)/cryptum --help
-
-# Показать информацию
-info:
-	@echo "Platform: $(UNAME_S)"
-	@echo "Ciphers: $(CIPHERS)"
-	@echo "Library prefix: $(LIB_PREFIX)"
-	@echo "Library extension: $(SO_EXT)"
-
-.PHONY: all clean run test tests rebuild info both $(CIPHERS) cryptum
+	rm -f cryptum cryptum.exe
+	rm -f algorithms/atbash/libatbash.so
+	rm -f algorithms/atbash/libatbash.dylib
+	rm -f algorithms/atbash/atbash.dll
+	rm -f algorithms/vernam/libvernam.so
+	rm -f algorithms/vernam/libvernam.dylib
+	rm -f algorithms/vernam/vernam.dll
