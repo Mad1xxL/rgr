@@ -2,7 +2,7 @@
 
 static const AlgorithmInfo ALGORITHM_INFO = {
     "vernam",
-    32  // Рекомендуемая длина ключа 32 байта (256 бит)
+    32
 };
 
 extern "C" const AlgorithmInfo* get_algorithm_info() {
@@ -15,31 +15,26 @@ extern "C" size_t get_output_size(size_t input_size, int operation_type) {
 }
 
 extern "C" int encrypt(ConstBuffer key, ConstBuffer input, MutBuffer* output) {
-    // Проверка ключа
     if (key.size == 0 || key.data == nullptr) {
-        return -1;  // Ошибка: ключ не может быть пустым
+        return -1;
     }
     
-    // Проверка выходного буфера
     if (output == nullptr || output->data == nullptr) {
-        return -2;  // Ошибка: некорректный выходной буфер
+        return -2;
     }
     
-    // Проверка размера буфера
     if (output->size < input.size) {
-        return -3;  // Ошибка: недостаточный размер буфера
+        return -3;
     }
     
-    // Шифрование Вернама (XOR с циклическим использованием ключа)
     for (size_t i = 0; i < input.size; ++i) {
         output->data[i] = input.data[i] ^ key.data[i % key.size];
     }
     
     output->size = input.size;
-    return 0;  // Успех
+    return 0;
 }
 
 extern "C" int decrypt(ConstBuffer key, ConstBuffer input, MutBuffer* output) {
-    // Для XOR шифрование и расшифрование идентичны
     return encrypt(key, input, output);
 }
